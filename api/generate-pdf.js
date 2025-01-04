@@ -69,11 +69,20 @@ module.exports = async (req, res) => {
     return res.status(405).send("Method Not Allowed");
   }
 
-  const { codes } = req.body;
+  let { codes } = req.body;
 
-  if (!codes || !Array.isArray(codes) || codes.length === 0) {
+  // Принудительно преобразуем код в массив, если он не является массивом
+  if (!Array.isArray(codes)) {
+    console.log("Converting codes to array...");
+    codes = [codes]; // Преобразуем в массив
+  }
+
+  if (!codes || codes.length === 0) {
     return res.status(400).json({ error: "Invalid input. Provide an array of codes." });
   }
+
+  // Логирование входных данных для отладки
+  console.log("Received codes:", codes);
 
   try {
     const pdfBuffers = [];
