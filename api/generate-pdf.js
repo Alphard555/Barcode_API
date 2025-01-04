@@ -51,9 +51,7 @@ const generateBarcodePDF = async (code) => {
       height, // Высота штрихкода
     });
 
-    // Используем дефолтный шрифт Times-Roman (по умолчанию)
     console.log("Using default font (Times-Roman)...");
-    const font = await pdfDoc.embedFont(PDFDocument.Font.Helvetica); // Удалите эту строку
     const fontSize = 6; // Размер шрифта для текста
 
     // Добавляем текст под штрихкодом
