@@ -51,6 +51,7 @@ const generateBarcodePDF = async (code) => {
       height, // Высота штрихкода
     });
 
+    // Используем дефолтный шрифт Times-Roman (по умолчанию)
     console.log("Using default font (Times-Roman)...");
     const fontSize = 6; // Размер шрифта для текста
 
@@ -59,7 +60,6 @@ const generateBarcodePDF = async (code) => {
     page.drawText(code, {
       x: barcodeMargin,
       y: page.getHeight() - height - barcodeMargin - fontSize, 
-      font: font, // Используем стандартный шрифт Times-Roman
       size: fontSize,
       color: rgb(0, 0, 0), 
     });
@@ -130,4 +130,5 @@ module.exports = async (req, res) => {
     res.status(500).json({ error: "Failed to generate PDF" });
   }
 };
+
 
