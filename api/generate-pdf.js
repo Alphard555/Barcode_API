@@ -7,6 +7,8 @@ const bwipjs = require("bwip-js");
 const TEMP_DIR = "/tmp"; 
 
 // Генерация PDF с одним штрихкодом
+const { rgb } = require("pdf-lib");
+
 const generateBarcodePDF = async (code) => {
   try {
     const widthMm = 56;
@@ -45,12 +47,15 @@ const generateBarcodePDF = async (code) => {
       height, // Высота штрихкода
     });
 
-    // Добавляем текст под штрихкодом
+    // Встраиваем шрифт Helvetica
+    const fontBytes = await pdfDoc.embedFont(PDFDocument.Font.Helvetica);
     const fontSize = 6; // Размер шрифта для текста
+
+    // Добавляем текст под штрихкодом
     page.drawText(code, {
       x: barcodeMargin,
       y: page.getHeight() - height - barcodeMargin - fontSize, 
-      font: await pdfDoc.embedFont(PDFDocument.Font.Helvetica),
+      font: fontBytes,
       size: fontSize,
       color: rgb(0, 0, 0), 
     });
