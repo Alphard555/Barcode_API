@@ -4,32 +4,58 @@ const { PDFDocument } = require("pdf-lib");
 const bwipjs = require("bwip-js");
 
 // Временная директория для хранения PDF
-const TEMP_DIR = "/tmp"; // Vercel поддерживает временные файлы в папке /tmp
+const TEMP_DIR = "/tmp"; 
 
 // Генерация PDF с одним штрихкодом
 const generateBarcodePDF = async (code) => {
   try {
+    const widthMm = 56;
+    const heightMm = 40;
+    const margin = 3; // 3 мм
+    const spaceBetween = 2; // 2 мм
+
+    const pageWidth = widthMm * 2.83465; 
+    const pageHeight = heightMm * 2.83465; 
+    const barcodeMargin = margin * 2.83465; 
+    const textMargin = spaceBetween * 2.83465; 
+
+    // Генерация штрихкода
     const barcodeBuffer = await bwipjs.toBuffer({
-      bcid: "code128",
-      text: code,
-      scale: 3,
-      height: 10,
-      includetext: true,
-      textxalign: "center",
+      bcid: "code128",      // Тип штрихкода
+      text: code,           // Текст штрихкода
+      scale: 3,             // Масштаб
+      height: 10,           // Высота штрихкода
+      includetext: true,    // Включить текст под штрихкодом
+      textxalign: "center", // Выравнивание текста
     });
 
+    // Создание PDF-документа
     const pdfDoc = await PDFDocument.create();
-    const page = pdfDoc.addPage([200, 100]);
+    const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
+    // Встраиваем PNG штрихкода в PDF
     const barcodeImage = await pdfDoc.embedPng(barcodeBuffer);
     const { width, height } = barcodeImage.scale(0.5);
+
+    // Располагаем штрихкод на странице
     page.drawImage(barcodeImage, {
-      x: page.getWidth() / 2 - width / 2,
-      y: page.getHeight() / 2 - height / 2,
-      width,
-      height,
+      x: barcodeMargin,
+      y: page.getHeight() - height - barcodeMargin - textMargin, // Отступ сверху
+      width: pageWidth - 2 * barcodeMargin, // Ширина штрихкода с отступами
+      height, // Высота штрихкода
     });
 
+    // Добавляем текст под штрихкодом
+    const fontSize = 6; // Размер шрифта для текста
+    page.drawText(code, {
+      x: barcodeMargin,
+      y: page.getHeight() - height - barcodeMargin - fontSize, 
+      font: await pdfDoc.embedFont(PDFDocument.Font.Helvetica),
+      size: fontSize,
+      color: rgb(0, 0, 0), 
+    });
+
+    // Сохраняем PDF
     return await pdfDoc.save();
   } catch (err) {
     console.error("Error generating barcode PDF:", err);
@@ -69,8 +95,11 @@ module.exports = async (req, res) => {
 
     fs.writeFileSync(filePath, mergedPdfBytes);
 
+    // Формируем полный URL для скачивания
+    const fileUrl = `${req.protocol}://${req.get("host")}/api/files/${fileName}`;
+
     res.setHeader("Content-Type", "application/json");
-    res.json({ url: `/api/files/${fileName}` });
+    res.json({ url: fileUrl });
   } catch (err) {
     console.error("Error generating merged PDF:", err);
     res.status(500).json({ error: "Failed to generate PDF" });
