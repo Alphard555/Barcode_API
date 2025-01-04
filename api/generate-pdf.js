@@ -22,6 +22,7 @@ const generateBarcodePDF = async (code) => {
     const textMargin = spaceBetween * 2.83465; 
 
     // Генерация штрихкода
+    console.log("Generating barcode for code:", code);
     const barcodeBuffer = await bwipjs.toBuffer({
       bcid: "code128",      // Тип штрихкода
       text: code,           // Текст штрихкода
@@ -30,8 +31,10 @@ const generateBarcodePDF = async (code) => {
       includetext: true,    // Включить текст под штрихкодом
       textxalign: "center", // Выравнивание текста
     });
+    console.log("Barcode generated successfully.");
 
     // Создание PDF-документа
+    console.log("Creating PDF document...");
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
@@ -40,6 +43,7 @@ const generateBarcodePDF = async (code) => {
     const { width, height } = barcodeImage.scale(0.5);
 
     // Располагаем штрихкод на странице
+    console.log("Placing barcode on PDF page...");
     page.drawImage(barcodeImage, {
       x: barcodeMargin,
       y: page.getHeight() - height - barcodeMargin - textMargin, // Отступ сверху
@@ -48,10 +52,14 @@ const generateBarcodePDF = async (code) => {
     });
 
     // Встраиваем шрифт Helvetica
+    console.log("Embedding font Helvetica...");
     const fontBytes = await pdfDoc.embedFont(PDFDocument.Font.Helvetica);
+    console.log("Font embedded successfully.");
+
     const fontSize = 6; // Размер шрифта для текста
 
     // Добавляем текст под штрихкодом
+    console.log("Adding text to PDF...");
     page.drawText(code, {
       x: barcodeMargin,
       y: page.getHeight() - height - barcodeMargin - fontSize, 
@@ -61,6 +69,7 @@ const generateBarcodePDF = async (code) => {
     });
 
     // Сохраняем PDF
+    console.log("Saving PDF...");
     return await pdfDoc.save();
   } catch (err) {
     console.error("Error generating barcode PDF:", err);
@@ -71,6 +80,7 @@ const generateBarcodePDF = async (code) => {
 // Генерация объединенного PDF
 module.exports = async (req, res) => {
   if (req.method !== "POST") {
+    console.log("Received non-POST request method.");
     return res.status(405).send("Method Not Allowed");
   }
 
@@ -83,6 +93,7 @@ module.exports = async (req, res) => {
   }
 
   if (!codes || codes.length === 0) {
+    console.log("No codes provided.");
     return res.status(400).json({ error: "Invalid input. Provide an array of codes." });
   }
 
@@ -92,10 +103,12 @@ module.exports = async (req, res) => {
   try {
     const pdfBuffers = [];
     for (const code of codes) {
+      console.log("Processing code:", code);
       const pdfBuffer = await generateBarcodePDF(code);
       pdfBuffers.push(pdfBuffer);
     }
 
+    console.log("Merging PDF documents...");
     const mergedPdf = await PDFDocument.create();
     for (const pdfBuffer of pdfBuffers) {
       const pdfToMerge = await PDFDocument.load(pdfBuffer);
@@ -108,9 +121,11 @@ module.exports = async (req, res) => {
     const filePath = path.join(TEMP_DIR, fileName);
 
     fs.writeFileSync(filePath, mergedPdfBytes);
+    console.log(`PDF saved to: ${filePath}`);
 
     // Формируем полный URL для скачивания
     const fileUrl = `${req.protocol}://${req.get("host")}/api/files/${fileName}`;
+    console.log("Generated file URL:", fileUrl);
 
     res.setHeader("Content-Type", "application/json");
     res.json({ url: fileUrl });
