@@ -51,11 +51,9 @@ const generateBarcodePDF = async (code) => {
       height, // Высота штрихкода
     });
 
-    // Встраиваем шрифт Helvetica
-    console.log("Embedding font Helvetica...");
-    const fontBytes = await pdfDoc.embedFont(PDFDocument.Font.Helvetica);
-    console.log("Font embedded successfully.");
-
+    // Используем дефолтный шрифт Times-Roman
+    console.log("Using default font (Times-Roman)...");
+    const font = await pdfDoc.embedFont(PDFDocument.Font.Helvetica);
     const fontSize = 6; // Размер шрифта для текста
 
     // Добавляем текст под штрихкодом
@@ -63,7 +61,7 @@ const generateBarcodePDF = async (code) => {
     page.drawText(code, {
       x: barcodeMargin,
       y: page.getHeight() - height - barcodeMargin - fontSize, 
-      font: fontBytes,
+      font,
       size: fontSize,
       color: rgb(0, 0, 0), 
     });
