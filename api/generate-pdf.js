@@ -3,16 +3,18 @@ const path = require("path");
 const { PDFDocument, rgb } = require("pdf-lib");
 const bwipjs = require("bwip-js");
 const AWS = require("aws-sdk");
+require("dotenv").config(); // Подключение dotenv для работы с .env
 
-// Конфигурация Yandex Object Storage
+// Конфигурация Yandex Object Storage из переменных окружения
 AWS.config.update({
-  accessKeyId: "YCAJEMvLbNPseN3TUBIllrR9S",
-  secretAccessKey: "YCMUoaU-QcGNx5rhnsub9qJY1pXxw6zqi_n_ot9t",
-  region: "ru-central1",
-  endpoint: "https://storage.yandexcloud.net",
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  region: process.env.AWS_REGION || "ru-central1",
+  endpoint: process.env.AWS_ENDPOINT || "https://storage.yandexcloud.net",
 });
+
 const s3 = new AWS.S3();
-const BUCKET_NAME = "packagebc";
+const BUCKET_NAME = process.env.AWS_BUCKET_NAME || "packagebc";
 const TEMP_DIR = "/tmp";
 
 // Генерация PDF с одним штрихкодом

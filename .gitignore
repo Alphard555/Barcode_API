@@ -1,0 +1,10 @@
+# Игнорировать файлы настроек окружения
+.env
+
+# Node.js
+node_modules/
+
+# Логи
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
