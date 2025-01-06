@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "api/generate-pdf.js",
   "dependencies": {
+    "aws-sdk": "^2.1692.0",
     "bwip-js": "^2.1.2",
     "pdf-lib": "^1.17.1"
   }
