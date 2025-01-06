@@ -4,6 +4,7 @@ const { PDFDocument, rgb } = require("pdf-lib");
 const bwipjs = require("bwip-js");
 const AWS = require("aws-sdk");
 require("dotenv").config(); // Подключение dotenv для работы с .env
+console.log("Current server time:", new Date().toISOString());
 
 // Конфигурация Yandex Object Storage из переменных окружения
 AWS.config.update({
@@ -12,6 +13,7 @@ AWS.config.update({
   region: process.env.AWS_REGION || "ru-central1",
   endpoint: process.env.AWS_ENDPOINT || "https://storage.yandexcloud.net",
 });
+console.log(process.env.AWS_ACCESS_KEY_ID, process.env.AWS_SECRET_ACCESS_KEY, process.env.AWS_BUCKET_NAME);
 
 const s3 = new AWS.S3();
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME || "packagebc";
@@ -105,6 +107,7 @@ module.exports = async (req, res) => {
       Body: Buffer.from(mergedPdfBytes),
       ContentType: "application/pdf",
     };
+	console.log("File name:", fileName);
 
     const uploadResult = await s3.upload(uploadParams).promise();
     console.log("File uploaded to Yandex Object Storage:", uploadResult.Location);
