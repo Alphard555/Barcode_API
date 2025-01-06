@@ -120,11 +120,13 @@ module.exports = async (req, res) => {
     console.log(`PDF saved to: ${filePath}`);
 
     // Формируем полный URL для скачивания
-    const fileUrl = `${req.protocol}://${req.get("host")}/api/files/${fileName}`;
-    console.log("Generated file URL:", fileUrl);
+const host = req.headers['x-forwarded-host'] || req.headers.host; // Пробуем получить хост из заголовков
+const fileUrl = `https://${host}/api/files/${fileName}`; // Принудительно добавляем https
+console.log("Generated file URL:", fileUrl);
 
-    res.setHeader("Content-Type", "application/json");
-    res.json({ url: fileUrl });
+// Отправляем ответ с URL
+res.setHeader("Content-Type", "application/json");
+res.json({ url: fileUrl });
   } catch (err) {
     console.error("Error generating merged PDF:", err);
     res.status(500).json({ error: "Failed to generate PDF" });
