@@ -30,7 +30,7 @@ const generateBarcodePDF = async (code) => {
 
     const pageWidth = widthMm * 2.83465; // Конвертация мм в точки
     const pageHeight = heightMm * 2.83465;
-    const barcodeMargin = margin * 2.83465;
+    const marginPts = margin * 2.83465; // Конвертация отступа в точки
 
     // Генерация изображения штрихкода
     const barcodeBuffer = await bwipjs.toBuffer({
@@ -46,21 +46,28 @@ const generateBarcodePDF = async (code) => {
     const page = pdfDoc.addPage([pageWidth, pageHeight]);
 
     const barcodeImage = await pdfDoc.embedPng(barcodeBuffer);
-    const barcodeScale = 0.6; // Масштаб штрихкода
-    const { width, height } = barcodeImage.scale(barcodeScale);
+
+    // Рассчитываем максимальные размеры для штрихкода с учетом отступов
+    const maxWidth = pageWidth - 2 * marginPts;
+    const maxHeight = pageHeight - 2 * marginPts - 15; // Учитываем место для текста
+
+    // Масштабируем изображение штрихкода, чтобы оно вписалось в доступное пространство
+    const scale = Math.min(maxWidth / barcodeImage.width, maxHeight / barcodeImage.height);
+    const scaledWidth = barcodeImage.width * scale;
+    const scaledHeight = barcodeImage.height * scale;
 
     // Отрисовка штрихкода
     page.drawImage(barcodeImage, {
-      x: (pageWidth - width) / 2, // Центровка по горизонтали
-      y: pageHeight - height - barcodeMargin, // Расположение сверху
-      width,
-      height,
+      x: (pageWidth - scaledWidth) / 2, // Центровка по горизонтали
+      y: pageHeight - scaledHeight - marginPts - 15, // Центровка по вертикали с учетом текста
+      width: scaledWidth,
+      height: scaledHeight,
     });
 
     // Отрисовка текста под штрихкодом
     page.drawText(code, {
-      x: (pageWidth - code.length * 5) / 2, // Центровка текста
-      y: pageHeight - height - barcodeMargin - 15, // Под штрихкодом
+      x: (pageWidth - code.length * 6) / 2, // Центровка текста
+      y: marginPts, // Расположение текста снизу страницы
       size: 10, // Размер текста
       color: rgb(0, 0, 0), // Черный цвет
     });
@@ -72,7 +79,6 @@ const generateBarcodePDF = async (code) => {
     throw new Error("Failed to generate barcode PDF");
   }
 };
-
 
 // Основной обработчик
 module.exports = async (req, res) => {
