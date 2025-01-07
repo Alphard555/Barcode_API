@@ -5,13 +5,6 @@ const bwipjs = require("bwip-js");
 const AWS = require("aws-sdk");
 require("dotenv").config(); // Подключение dotenv для работы с .env
 
-console.log("Loaded environment variables:");
-console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID);
-console.log("AWS_SECRET_ACCESS_KEY:", process.env.AWS_SECRET_ACCESS_KEY);
-console.log("AWS_BUCKET_NAME:", process.env.AWS_BUCKET_NAME);
-console.log("AWS_REGION:", process.env.AWS_REGION);
-console.log("AWS_ENDPOINT:", process.env.AWS_ENDPOINT);
-console.log("Current server time:", new Date().toISOString());
 
 // Конфигурация Yandex Object Storage из переменных окружения
 AWS.config.update({
@@ -31,42 +24,45 @@ const generateBarcodePDF = async (code) => {
   try {
     console.log(`Generating barcode PDF for code: ${code}`);
 
-    const widthMm = 56;
-    const heightMm = 40;
-    const margin = 3;
-    const spaceBetween = 2;
+    const widthMm = 56; // Ширина страницы в мм
+    const heightMm = 40; // Высота страницы в мм
+    const margin = 3; // Отступы в мм
 
-    const pageWidth = widthMm * 2.83465;
+    const pageWidth = widthMm * 2.83465; // Конвертация мм в точки
     const pageHeight = heightMm * 2.83465;
     const barcodeMargin = margin * 2.83465;
-    const textMargin = spaceBetween * 2.83465;
 
+    // Генерация изображения штрихкода
     const barcodeBuffer = await bwipjs.toBuffer({
-      bcid: "code128",
-      text: code,
-      scale: 3,
-      height: 10,
-      includetext: true,
-      textxalign: "center",
+      bcid: "code128", // Тип штрихкода
+      text: code, // Код для генерации
+      scale: 3, // Масштаб
+      height: 10, // Высота штрихкода
+      includetext: false, // Не включать текст внутри изображения
     });
 
+    // Создание PDF-документа
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([pageWidth, pageHeight]);
-    const barcodeImage = await pdfDoc.embedPng(barcodeBuffer);
-    const { height } = barcodeImage.scale(0.5);
 
+    const barcodeImage = await pdfDoc.embedPng(barcodeBuffer);
+    const barcodeScale = 0.6; // Масштаб штрихкода
+    const { width, height } = barcodeImage.scale(barcodeScale);
+
+    // Отрисовка штрихкода
     page.drawImage(barcodeImage, {
-      x: barcodeMargin,
-      y: page.getHeight() - height - barcodeMargin - textMargin,
-      width: pageWidth - 2 * barcodeMargin,
+      x: (pageWidth - width) / 2, // Центровка по горизонтали
+      y: pageHeight - height - barcodeMargin, // Расположение сверху
+      width,
       height,
     });
 
+    // Отрисовка текста под штрихкодом
     page.drawText(code, {
-      x: barcodeMargin,
-      y: page.getHeight() - height - barcodeMargin - 10,
-      size: 6,
-      color: rgb(0, 0, 0),
+      x: (pageWidth - code.length * 5) / 2, // Центровка текста
+      y: pageHeight - height - barcodeMargin - 15, // Под штрихкодом
+      size: 10, // Размер текста
+      color: rgb(0, 0, 0), // Черный цвет
     });
 
     console.log(`PDF generated for code: ${code}`);
@@ -76,6 +72,7 @@ const generateBarcodePDF = async (code) => {
     throw new Error("Failed to generate barcode PDF");
   }
 };
+
 
 // Основной обработчик
 module.exports = async (req, res) => {
