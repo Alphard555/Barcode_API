@@ -4,6 +4,7 @@ const { PDFDocument, rgb } = require("pdf-lib");
 const bwipjs = require("bwip-js");
 const AWS = require("aws-sdk");
 require("dotenv").config(); // Подключение dotenv для работы с .env
+console.log("Loaded environment variables:", process.env);
 console.log("Current server time:", new Date().toISOString());
 
 // Конфигурация Yandex Object Storage из переменных окружения
