@@ -4,7 +4,13 @@ const { PDFDocument, rgb } = require("pdf-lib");
 const bwipjs = require("bwip-js");
 const AWS = require("aws-sdk");
 require("dotenv").config(); // Подключение dotenv для работы с .env
-console.log("Loaded environment variables:", process.env);
+
+console.log("Loaded environment variables:");
+console.log("AWS_ACCESS_KEY_ID:", process.env.AWS_ACCESS_KEY_ID);
+console.log("AWS_SECRET_ACCESS_KEY:", process.env.AWS_SECRET_ACCESS_KEY);
+console.log("AWS_BUCKET_NAME:", process.env.AWS_BUCKET_NAME);
+console.log("AWS_REGION:", process.env.AWS_REGION);
+console.log("AWS_ENDPOINT:", process.env.AWS_ENDPOINT);
 console.log("Current server time:", new Date().toISOString());
 
 // Конфигурация Yandex Object Storage из переменных окружения
@@ -14,7 +20,7 @@ AWS.config.update({
   region: process.env.AWS_REGION || "ru-central1",
   endpoint: process.env.AWS_ENDPOINT || "https://storage.yandexcloud.net",
 });
-console.log(process.env.AWS_ACCESS_KEY_ID, process.env.AWS_SECRET_ACCESS_KEY, process.env.AWS_BUCKET_NAME);
+console.log("AWS Configured");
 
 const s3 = new AWS.S3();
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME || "packagebc";
@@ -23,6 +29,8 @@ const TEMP_DIR = "/tmp";
 // Генерация PDF с одним штрихкодом
 const generateBarcodePDF = async (code) => {
   try {
+    console.log(`Generating barcode PDF for code: ${code}`);
+
     const widthMm = 56;
     const heightMm = 40;
     const margin = 3;
@@ -61,6 +69,7 @@ const generateBarcodePDF = async (code) => {
       color: rgb(0, 0, 0),
     });
 
+    console.log(`PDF generated for code: ${code}`);
     return await pdfDoc.save();
   } catch (err) {
     console.error("Error generating barcode PDF:", err);
@@ -108,7 +117,8 @@ module.exports = async (req, res) => {
       Body: Buffer.from(mergedPdfBytes),
       ContentType: "application/pdf",
     };
-	console.log("File name:", fileName);
+    console.log("File name:", fileName);
+    console.log("Upload parameters:", uploadParams);
 
     const uploadResult = await s3.upload(uploadParams).promise();
     console.log("File uploaded to Yandex Object Storage:", uploadResult.Location);
