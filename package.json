@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "api/generate-pdf.js",
   "dependencies": {
+    "@zxing/library": "^0.21.3",
     "aws-sdk": "^2.1692.0",
     "bwip-js": "^2.1.2",
     "dotenv": "^16.4.7",
