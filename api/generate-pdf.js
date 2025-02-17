@@ -1,8 +1,11 @@
 const fs = require("fs");
 const path = require("path");
-const { PDFDocument } = require("pdf-lib");
+const { createCanvas } = require("canvas");
 const bwipjs = require("bwip-js");
 const AWS = require("aws-sdk");
+const pdfjsLib = require("pdfjs-dist");
+const { BrowserMultiFormatReader, BarcodeFormat } = require("@zxing/library");
+
 require("dotenv").config(); // Подключение dotenv для работы с .env
 
 // Конфигурация Yandex Object Storage из переменных окружения
@@ -15,7 +18,6 @@ AWS.config.update({
 console.log("AWS Configured");
 const s3 = new AWS.S3();
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME || "packagebc";
-const TEMP_DIR = "/tmp";
 
 // Генерация PDF с одним штрихкодом
 const generateBarcodePDF = async (code) => {
@@ -27,6 +29,7 @@ const generateBarcodePDF = async (code) => {
     const pageWidth = widthMm * 2.83465; // Конвертация мм в точки
     const pageHeight = heightMm * 2.83465;
     const marginPts = margin * 2.83465; // Конвертация отступа в точки
+
     // Генерация изображения штрихкода
     const barcodeBuffer = await bwipjs.toBuffer({
       bcid: "code128", // Тип штрихкода
@@ -35,17 +38,20 @@ const generateBarcodePDF = async (code) => {
       height: 10, // Высота штрихкода
       includetext: false, // Не включать текст внутри изображения
     });
+
     // Создание PDF-документа
+    const { PDFDocument, rgb } = require("pdf-lib");
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([pageWidth, pageHeight]);
     const barcodeImage = await pdfDoc.embedPng(barcodeBuffer);
+
     // Рассчитываем максимальные размеры для штрихкода с учетом отступов
     const maxWidth = pageWidth - 2 * marginPts;
     const maxHeight = pageHeight - 2 * marginPts - 15; // Учитываем место для текста
-    // Масштабируем изображение штрихкода, чтобы оно вписалось в доступное пространство
     const scale = Math.min(maxWidth / barcodeImage.width, maxHeight / barcodeImage.height);
     const scaledWidth = barcodeImage.width * scale;
     const scaledHeight = barcodeImage.height * scale;
+
     // Отрисовка штрихкода
     page.drawImage(barcodeImage, {
       x: (pageWidth - scaledWidth) / 2, // Центровка по горизонтали
@@ -53,6 +59,7 @@ const generateBarcodePDF = async (code) => {
       width: scaledWidth,
       height: scaledHeight,
     });
+
     // Отрисовка текста под штрихкодом
     page.drawText(code, {
       x: (pageWidth - code.length * 6) / 2, // Центровка текста
@@ -60,6 +67,7 @@ const generateBarcodePDF = async (code) => {
       size: 10, // Размер текста
       color: rgb(0, 0, 0), // Черный цвет
     });
+
     console.log(`PDF generated for code: ${code}`);
     return await pdfDoc.save();
   } catch (err) {
@@ -70,37 +78,45 @@ const generateBarcodePDF = async (code) => {
 
 // Функция для распознавания DataMatrix-кодов
 async function decodeDataMatrixFromPDF(pdfBuffer) {
-  const { PDFDocument } = require("pdf-lib");
-  const { BrowserQRCodeReader } = require("@zxing/library");
-
   try {
     // Загрузка PDF
-    const pdfDoc = await PDFDocument.load(pdfBuffer);
+    const pdfData = new Uint8Array(pdfBuffer);
+    const pdf = await pdfjsLib.getDocument(pdfData).promise;
     const decodedCodes = [];
 
-    for (let i = 0; i < pdfDoc.getPageCount(); i++) {
-      const page = pdfDoc.getPages()[i];
-      const embeddedImages = await page.getEmbeddedImages();
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
 
-      for (const image of embeddedImages) {
-        const imageBuffer = image.image.data;
+      // Получаем размеры страницы
+      const viewport = page.getViewport({ scale: 2.0 }); // Увеличиваем масштаб для лучшего качества
+      const canvas = createCanvas(viewport.width, viewport.height);
+      const ctx = canvas.getContext("2d");
 
-        // Преобразуем изображение в формат, поддерживаемый zxing
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        const img = new Image();
-        img.src = `data:image/png;base64,${imageBuffer.toString("base64")}`;
-        await new Promise((resolve) => (img.onload = resolve));
-        canvas.width = img.width;
-        canvas.height = img.height;
-        ctx.drawImage(img, 0, 0);
+      // Рендерим страницу PDF на Canvas
+      const renderContext = {
+        canvasContext: ctx,
+        viewport: viewport,
+      };
+      await page.render(renderContext).promise;
 
-        // Распознаем DataMatrix-коды
-        const codeReader = new BrowserQRCodeReader();
-        const result = await codeReader.decodeFromCanvas(canvas, "data_matrix");
+      // Преобразуем Canvas в Base64
+      const imageBase64 = canvas.toDataURL("image/png").split(",")[1];
+
+      // Распознаем штрихкоды
+      const codeReader = new BrowserMultiFormatReader();
+      const hints = new Map();
+      hints.set(
+        codeReader.Hints.POSSIBLE_FORMATS,
+        [BarcodeFormat.DATA_MATRIX, BarcodeFormat.EAN_13, BarcodeFormat.CODE_128]
+      );
+
+      try {
+        const result = await codeReader.decodeFromImage(undefined, imageBase64, hints);
         if (result) {
           decodedCodes.push(result.text);
         }
+      } catch (err) {
+        console.warn("Не удалось распознать штрихкод:", err);
       }
     }
 
@@ -135,6 +151,7 @@ module.exports = async (req, res) => {
         pdfBuffers.push(pdfBuffer);
       }
 
+      const { PDFDocument } = require("pdf-lib");
       const mergedPdf = await PDFDocument.create();
       for (const pdfBuffer of pdfBuffers) {
         const pdfToMerge = await PDFDocument.load(pdfBuffer);

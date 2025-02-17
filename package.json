@@ -6,7 +6,9 @@
     "@zxing/library": "^0.21.3",
     "aws-sdk": "^2.1692.0",
     "bwip-js": "^2.1.2",
+    "canvas": "^3.1.0",
     "dotenv": "^16.4.7",
-    "pdf-lib": "^1.17.1"
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^4.10.38"
   }
 }
