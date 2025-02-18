@@ -2,7 +2,7 @@
   "name": "vercel-barcode-api",
   "version": "1.0.0",
   "main": "api/generate-pdf.js",
-  "type": "module"
+  "type": "module",
   "dependencies": {
     "@zxing/library": "^0.21.3",
     "aws-sdk": "^2.1692.0",
