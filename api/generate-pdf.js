@@ -79,6 +79,9 @@ const generateBarcodePDF = async (code) => {
 // Функция для распознавания DataMatrix-кодов
 async function decodeDataMatrixFromPDF(pdfBuffer) {
   try {
+    // Динамический импорт pdfjs-dist
+    const pdfjsLib = await import("pdfjs-dist/build/pdf.js");
+
     // Загрузка PDF
     const pdfData = new Uint8Array(pdfBuffer);
     const pdf = await pdfjsLib.getDocument(pdfData).promise;
