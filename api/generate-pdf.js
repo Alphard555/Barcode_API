@@ -6,6 +6,10 @@ const bwipjs = require("bwip-js");
 const AWS = require("aws-sdk");
 require("dotenv").config();
 
+// Полифиллы для работы с pdfjs-dist в Node.js
+const { createCanvas, ImageData } = require("canvas");
+global.ImageData = ImageData;
+
 // Конфигурация Yandex Object Storage
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
@@ -78,6 +82,7 @@ async function decodeDataMatrixFromPDF(pdfBuffer) {
   try {
     // Динамический импорт pdfjs-dist
     const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+    pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
 
     // Загрузка PDF
     const pdfData = new Uint8Array(pdfBuffer);
