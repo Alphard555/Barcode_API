@@ -73,11 +73,11 @@ const generateBarcodePDF = async (code) => {
   }
 };
 
-// Функция для распознавания DataMatrix-кодов (ИСПРАВЛЕНА)
+// Функция для распознавания DataMatrix-кодов
 async function decodeDataMatrixFromPDF(pdfBuffer) {
   try {
     // Динамический импорт pdfjs-dist
-    const pdfjsLib = await import("pdfjs-dist/build/pdf.js");
+    const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
     // Загрузка PDF
     const pdfData = new Uint8Array(pdfBuffer);
