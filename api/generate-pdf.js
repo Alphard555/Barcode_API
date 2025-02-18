@@ -1,11 +1,12 @@
+// Импорты для генерации PDF (CommonJS)
 const fs = require("fs");
 const path = require("path");
-const { createCanvas } = require("canvas");
+const { PDFDocument } = require("pdf-lib");
 const bwipjs = require("bwip-js");
 const AWS = require("aws-sdk");
-require("dotenv").config(); // Подключение dotenv для работы с .env
+require("dotenv").config();
 
-// Конфигурация Yandex Object Storage из переменных окружения
+// Конфигурация Yandex Object Storage
 AWS.config.update({
   accessKeyId: process.env.AWS_ACCESS_KEY_ID,
   secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
@@ -37,7 +38,6 @@ const generateBarcodePDF = async (code) => {
     });
 
     // Создание PDF-документа
-    const { PDFDocument, rgb } = require("pdf-lib");
     const pdfDoc = await PDFDocument.create();
     const page = pdfDoc.addPage([pageWidth, pageHeight]);
     const barcodeImage = await pdfDoc.embedPng(barcodeBuffer);
@@ -62,7 +62,7 @@ const generateBarcodePDF = async (code) => {
       x: (pageWidth - code.length * 6) / 2, // Центровка текста
       y: marginPts, // Расположение текста снизу страницы
       size: 10, // Размер текста
-      color: rgb(0, 0, 0), // Черный цвет
+      color: { r: 0, g: 0, b: 0 }, // Черный цвет
     });
 
     console.log(`PDF generated for code: ${code}`);
@@ -154,7 +154,6 @@ module.exports = async (req, res) => {
         pdfBuffers.push(pdfBuffer);
       }
 
-      const { PDFDocument } = require("pdf-lib");
       const mergedPdf = await PDFDocument.create();
       for (const pdfBuffer of pdfBuffers) {
         const pdfToMerge = await PDFDocument.load(pdfBuffer);
