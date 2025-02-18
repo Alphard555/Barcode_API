@@ -3,9 +3,6 @@ const path = require("path");
 const { createCanvas } = require("canvas");
 const bwipjs = require("bwip-js");
 const AWS = require("aws-sdk");
-const pdfjsLib = require("pdfjs-dist");
-const { BrowserMultiFormatReader, BarcodeFormat } = require("@zxing/library");
-
 require("dotenv").config(); // Подключение dotenv для работы с .env
 
 // Конфигурация Yandex Object Storage из переменных окружения
@@ -19,7 +16,7 @@ console.log("AWS Configured");
 const s3 = new AWS.S3();
 const BUCKET_NAME = process.env.AWS_BUCKET_NAME || "packagebc";
 
-// Генерация PDF с одним штрихкодом
+// Генерация PDF с одним штрихкодом (НЕ ТРОГАЕМ)
 const generateBarcodePDF = async (code) => {
   try {
     console.log(`Generating barcode PDF for code: ${code}`);
@@ -76,7 +73,7 @@ const generateBarcodePDF = async (code) => {
   }
 };
 
-// Функция для распознавания DataMatrix-кодов
+// Функция для распознавания DataMatrix-кодов (ИСПРАВЛЕНА)
 async function decodeDataMatrixFromPDF(pdfBuffer) {
   try {
     // Динамический импорт pdfjs-dist
@@ -104,6 +101,9 @@ async function decodeDataMatrixFromPDF(pdfBuffer) {
 
       // Преобразуем Canvas в Base64
       const imageBase64 = canvas.toDataURL("image/png").split(",")[1];
+
+      // Динамический импорт @zxing/library
+      const { BrowserMultiFormatReader, BarcodeFormat } = await import("@zxing/library");
 
       // Распознаем штрихкоды
       const codeReader = new BrowserMultiFormatReader();
