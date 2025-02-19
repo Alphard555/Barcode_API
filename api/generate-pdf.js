@@ -7,8 +7,9 @@ const AWS = require("aws-sdk");
 require("dotenv").config();
 
 // Полифиллы для работы с pdfjs-dist в Node.js
-const { createCanvas, ImageData } = require("canvas");
+const { createCanvas, ImageData, Path2D } = require("canvas");
 global.ImageData = ImageData;
+global.Path2D = Path2D;
 
 // Конфигурация Yandex Object Storage
 AWS.config.update({
@@ -82,7 +83,10 @@ async function decodeDataMatrixFromPDF(pdfBuffer) {
   try {
     // Динамический импорт pdfjs-dist
     const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+
+    // Настройка worker и шрифтов
     pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
+    pdfjsLib.setStandardFontDataUrl(require.resolve("pdfjs-dist/standard_fonts"));
 
     // Загрузка PDF
     const pdfData = new Uint8Array(pdfBuffer);
