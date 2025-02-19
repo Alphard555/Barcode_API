@@ -84,9 +84,8 @@ async function decodeDataMatrixFromPDF(pdfBuffer) {
     // Динамический импорт pdfjs-dist
     const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
-    // Настройка worker и шрифтов
+    // Настройка worker
     pdfjsLib.GlobalWorkerOptions.workerSrc = require.resolve("pdfjs-dist/legacy/build/pdf.worker.mjs");
-    pdfjsLib.setStandardFontDataUrl(require.resolve("pdfjs-dist/standard_fonts"));
 
     // Загрузка PDF
     const pdfData = new Uint8Array(pdfBuffer);
