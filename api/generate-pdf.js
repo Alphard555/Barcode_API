@@ -7,9 +7,19 @@ const AWS = require("aws-sdk");
 require("dotenv").config();
 
 // Полифиллы для работы с pdfjs-dist в Node.js
-const { createCanvas, ImageData, Path2D } = require("canvas");
+const { createCanvas, ImageData } = require("canvas");
 global.ImageData = ImageData;
-global.Path2D = Path2D;
+
+// Используем polyfill для Path2D
+if (!global.Path2D) {
+  global.Path2D = class Path2D {
+    constructor() {}
+    addPath() {}
+    moveTo() {}
+    lineTo() {}
+    closePath() {}
+  };
+}
 
 // Конфигурация Yandex Object Storage
 AWS.config.update({
